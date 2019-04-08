@@ -22,10 +22,14 @@ class ReplyKeyboardRemove implements TypeInterface
     /**
      * ReplyKeyboardRemove constructor.
      * @param array $data
+     * @throws \Exception
      */
     public function __construct(array $data)
     {
-        $this->remove_keyboard = $data['remove_keyboard'];
+        if (isset($data['remove_keyboard']) && $data['remove_keyboard'] !== true) {
+            throw new \Exception('Parameter "remove_keyboard" must be true');
+        }
+        $this->remove_keyboard = true;
         $this->selective = $data['selective'] ?? null;
     }
 
@@ -42,13 +46,13 @@ class ReplyKeyboardRemove implements TypeInterface
     }
 
     /**
-     * @param bool $remove_keyboard
      * @return ReplyKeyboardRemove
+     * @throws \Exception
      */
-    public static function make(bool $remove_keyboard): self
+    public static function make(): self
     {
         return new self([
-            'remove_keyboard' => $remove_keyboard,
+
         ]);
     }
 }

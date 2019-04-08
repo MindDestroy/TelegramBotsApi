@@ -10,7 +10,7 @@ namespace TelegramBotsApi;
 class Request
 {
     public const REQUEST_TIMEOUT = 30;
-    public const CONNECT_TIMEOUT = 30;
+    public const CONNECT_TIMEOUT = 10;
 
     public const CAN_DISABLE_NOTIFICATION = 1;
     public const CAN_REPLY_TO_MESSAGE = 2;
@@ -18,9 +18,9 @@ class Request
     public const CAN_SET_PARSE_MODE = 8;
     public const CAN_ADD_INLINE_KEYBOARD_MARKUP = 16;
     public const CAN_ADD_REPLY_KEYBOARD_MARKUP = 32;
-    public const CAN_ADD_REPLY_KEYBOARD_REMOVE = 64;
+    public const CAN_REMOVE_REPLY_KEYBOARD = 64;
     public const CAN_ADD_FORCE_REPLY = 128;
-    public const CAN_ADD_REPLY_MARKUP = self::CAN_ADD_INLINE_KEYBOARD_MARKUP | self::CAN_ADD_REPLY_KEYBOARD_MARKUP | self::CAN_ADD_REPLY_KEYBOARD_REMOVE | self::CAN_ADD_FORCE_REPLY;
+    public const CAN_ADD_REPLY_MARKUP = self::CAN_ADD_INLINE_KEYBOARD_MARKUP | self::CAN_ADD_REPLY_KEYBOARD_MARKUP | self::CAN_REMOVE_REPLY_KEYBOARD | self::CAN_ADD_FORCE_REPLY;
 
     /**
      * @var string $token Token of the Telegram-bot
@@ -38,7 +38,7 @@ class Request
     public $params;
 
     /**
-     * @var array
+     * @var int
      */
     private $permissions;
 
@@ -53,63 +53,17 @@ class Request
         $this->token = $token;
         $this->method = $method;
         $this->params = $params;
-        $permissions_bits = array_reverse(str_split(decbin($permissions)));
-        $this->permissions = [
-            self::CAN_DISABLE_NOTIFICATION => !empty($permissions_bits[1]),
-            self::CAN_REPLY_TO_MESSAGE => !empty($permissions_bits[2]),
-            self::CAN_DISABLE_WEB_PAGE_PREVIEW => !empty($permissions_bits[3]),
-            self::CAN_SET_PARSE_MODE => !empty($permissions_bits[4]),
-            self::CAN_ADD_INLINE_KEYBOARD_MARKUP => !empty($permissions_bits[5]),
-            self::CAN_ADD_REPLY_KEYBOARD_MARKUP => !empty($permissions_bits[6]),
-            self::CAN_ADD_REPLY_KEYBOARD_REMOVE => !empty($permissions_bits[7]),
-            self::CAN_ADD_FORCE_REPLY => !empty($permissions_bits[8]),
-            self::CAN_ADD_REPLY_MARKUP => !empty($permissions_bits[5]) && !empty($permissions_bits[6]) && !empty($permissions_bits[7]) && !empty($permissions_bits[8]),
-        ];
-    }
-
-    public function getPermission(int $permission): bool
-    {
-        return $this->permissions[$permission];
-    }
-
-    private static function getPermissionName(int $permission): string
-    {
-        switch ($permission) {
-            case self::CAN_DISABLE_NOTIFICATION:
-                return 'CAN_DISABLE_NOTIFICATION';
-            case self::CAN_REPLY_TO_MESSAGE:
-                return 'CAN_REPLY_TO_MESSAGE';
-            case self::CAN_DISABLE_WEB_PAGE_PREVIEW:
-                return 'CAN_DISABLE_WEB_PAGE_PREVIEW';
-            case self::CAN_SET_PARSE_MODE:
-                return 'CAN_SET_PARSE_MODE';
-            case self::CAN_ADD_INLINE_KEYBOARD_MARKUP:
-                return 'CAN_ADD_INLINE_KEYBOARD_MARKUP';
-            case self::CAN_ADD_REPLY_KEYBOARD_MARKUP:
-                return 'CAN_ADD_REPLY_KEYBOARD_MARKUP';
-            case self::CAN_ADD_REPLY_KEYBOARD_REMOVE:
-                return 'CAN_ADD_REPLY_KEYBOARD_REMOVE';
-            case self::CAN_ADD_FORCE_REPLY:
-                return 'CAN_ADD_FORCE_REPLY';
-            case self::CAN_ADD_REPLY_MARKUP:
-                return 'CAN_ADD_REPLY_MARKUP';
-        }
-        return 'UNKNOWN_PERMISSION';
+        $this->permissions = $permissions;
     }
 
     /**
      * @param int $permission
-     * @param string $method
      * @return bool
      * @throws \Exception
      */
-    private function checkPermission(int $permission, string $method): bool
+    public function checkPermission(int $permission): bool
     {
-        if (!$this->getPermission($permission)) {
-            $permission_name = self::getPermissionName($permission);
-            throw new \Exception("Method {$method} require permission {$permission_name}");
-        }
-        return true;
+        return ($this->permissions & $permission) !== 0;
     }
 
     /**
@@ -122,18 +76,25 @@ class Request
         if (!Bot::checkParseMode($parse_mode)) {
             throw new \Exception("Unknown parse mode: {$parse_mode}");
         }
-        $this->checkPermission(self::CAN_SET_PARSE_MODE, __METHOD__);
+
+        if ($this->checkPermission(self::CAN_SET_PARSE_MODE)) {
+            throw new \Exception('It is not allowed for this method');
+        }
+
         $this->params['parse_mode'] = $parse_mode;
         return $this;
     }
 
     /**
+     * @param bool $enable
      * @return Request
      * @throws \Exception
      */
     public function setNotificationSending(bool $enable): self
     {
-        $this->checkPermission(self::CAN_DISABLE_NOTIFICATION, __METHOD__);
+        if ($this->checkPermission(self::CAN_DISABLE_NOTIFICATION)) {
+            throw new \Exception('It is not allowed for this method');
+        }
         $this->params['disable_notification'] = !$enable;
         return $this;
     }
@@ -145,7 +106,9 @@ class Request
      */
     public function setWebPagePreviewSending(bool $enable): self
     {
-        $this->checkPermission(self::CAN_DISABLE_WEB_PAGE_PREVIEW, __METHOD__);
+        if ($this->checkPermission(self::CAN_DISABLE_WEB_PAGE_PREVIEW)) {
+            throw new \Exception('It is not allowed for this method');
+        }
         $this->params['disable_web_page_preview'] = !$enable;
         return $this;
     }
@@ -157,24 +120,73 @@ class Request
      */
     public function replyToMessageWithId(int $message_id): self
     {
-        $this->checkPermission(self::CAN_REPLY_TO_MESSAGE, __METHOD__);
+        if ($this->checkPermission(self::CAN_REPLY_TO_MESSAGE)) {
+            throw new \Exception('It is not allowed for this method');
+        }
+
         $this->params['reply_to_message_id'] = $message_id;
         return $this;
     }
 
     /**
-     * @param bool $selective
+     * @param bool|null $selective
      * @return Request
      * @throws \Exception
      */
-    public function addForceReplyButton(bool $selective = false): self
+    public function addForceReply(bool $selective = null): self
     {
+        if ($this->checkPermission(self::CAN_ADD_REPLY_MARKUP | self::CAN_ADD_FORCE_REPLY)) {
+            throw new \Exception('It is not allowed for this method');
+        }
+        $force_reply = Types\ForceReply::make();
+        $force_reply->selective = $selective;
+        $this->params['reply_markup'] = $force_reply;
+        return $this;
+    }
 
-        $this->checkPermission(self::CAN_ADD_REPLY_MARKUP, __METHOD__);
-        $this->params['reply_markup'] = [
-            'force_reply' => true,
-            'selective' => $selective,
-        ];
+    /**
+     * @param Types\InlineKeyboardMarkup $inline_keyboard_markup
+     * @return Request
+     * @throws \Exception
+     */
+    public function addInlineKeyboardMarkup(Types\InlineKeyboardMarkup $inline_keyboard_markup): self
+    {
+        if ($this->checkPermission(self::CAN_ADD_REPLY_MARKUP | self::CAN_ADD_INLINE_KEYBOARD_MARKUP)) {
+            throw new \Exception('It is not allowed for this method');
+        }
+
+        $this->params['reply_markup'] = $inline_keyboard_markup;
+        return $this;
+    }
+
+    /**
+     * @param Types\ReplyKeyboardMarkup $reply_keyboard_markup
+     * @return Request
+     * @throws \Exception
+     */
+    public function addReplyKeyboardMarkup(Types\ReplyKeyboardMarkup $reply_keyboard_markup): self
+    {
+        if ($this->checkPermission(self::CAN_ADD_REPLY_MARKUP | self::CAN_ADD_REPLY_KEYBOARD_MARKUP)) {
+            throw new \Exception('It is not allowed for this method');
+        }
+
+        $this->params['reply_markup'] = $reply_keyboard_markup;
+        return $this;
+    }
+
+    /**
+     * @param bool|null $selective
+     * @return Request
+     * @throws \Exception
+     */
+    public function removeReplyKeyboard(bool $selective = null): self
+    {
+        if ($this->checkPermission(self::CAN_ADD_REPLY_MARKUP | self::CAN_REMOVE_REPLY_KEYBOARD)) {
+            throw new \Exception('It is not allowed for this method');
+        }
+        $reply_keyboard_remove = Types\ReplyKeyboardRemove::make();
+        $reply_keyboard_remove->selective = $selective;
+        $this->params['reply_markup'] = $reply_keyboard_remove;
         return $this;
     }
 
@@ -203,13 +215,9 @@ class Request
                 continue;
             }
             if (is_object($param_value)) {
-                if ($param_value instanceof Types\TypeInterface) {
-                    $object_data = self::processingParams($param_value->getRequestArray());
-                    if (!empty($object_data)) {
-                        $result[$param_key] = $object_data;
-                    }
-                } else {
-                    throw new \Exception("Class {$param_class} must implement TypeInterface");
+                $object_data = self::processingParams($param_value->getRequestArray());
+                if (!empty($object_data)) {
+                    $result[$param_key] = $object_data;
                 }
             } elseif (is_array($param_value)) {
                 $array_data = self::processingParams($param_value);
@@ -228,10 +236,15 @@ class Request
      * @return Response
      * @throws Exceptions\ApiException
      * @throws Exceptions\CurlException
+     * @throws \Exception
      */
     public function sendRequest(int $attempts = 1): Response
     {
         $url = "https://api.telegram.org/bot{$this->token}/{$this->method}";
+
+        if ($attempts < 1) {
+            throw new \Exception('The number of attempts can not be less than one');
+        }
 
         for ($i = 1; $i <= $attempts; $i++) {
             $ch = curl_init($url);
@@ -246,9 +259,11 @@ class Request
             ]);
 
             $result = curl_exec($ch);
-            if (!curl_errno($ch)) {
-                break;
+            if (curl_errno($ch)) {
+                curl_close($ch);
             }
+
+            break;
         }
 
         $result_decoded = json_decode($result, true);

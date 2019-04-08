@@ -23,10 +23,14 @@ class ForceReply implements TypeInterface
     /**
      * ForceReply constructor.
      * @param array $data
+     * @throws \Exception
      */
     public function __construct(array $data)
     {
-        $this->force_reply = $data['force_reply'];
+        if (!isset($data['force_reply']) || $data['force_reply'] !== true) {
+            throw new \Exception('Force reply must be true');
+        }
+        $this->force_reply = true;
         $this->selective = $data['selective'] ?? null;
     }
 
@@ -44,6 +48,7 @@ class ForceReply implements TypeInterface
 
     /**
      * @return ForceReply
+     * @throws \Exception
      */
     public static function make(): self
     {
