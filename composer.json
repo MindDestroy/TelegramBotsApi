@@ -1,0 +1,15 @@
+{
+  "name": "kuvardin/telegram-bots-api",
+  "description": "Simply PHP classes for make Telegram-bots",
+  "type": "library",
+  "license": "GNU v3.0",
+  "authors": [
+    {
+      "name": "Maxim Kuvardin",
+      "email": "kuvard.in@mail.ru"
+    }
+  ],
+  "require": {
+    "php": ">=7.0"
+  }
+}
