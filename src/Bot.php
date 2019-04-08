@@ -5,6 +5,7 @@ namespace TelegramBotsApi;
 /**
  * Class Bot
  * @package TelegramBotsApi
+ * @author Maxim Kuvardin <kuvard.in@mail.ru>
  */
 class Bot
 {
@@ -353,9 +354,17 @@ class Bot
         ], Request::CAN_DISABLE_NOTIFICATION | Request::CAN_REPLY_TO_MESSAGE | Request::CAN_ADD_REPLY_MARKUP);
     }
 
-    public function sendMediaGroup(): Request
+    /**
+     * @param string $chat_id Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+     * @param Types\InputMedia[] $media A JSON-serialized array describing photos and videos to be sent, must include 2–10 items
+     * @return Request
+     */
+    public function sendMediaGroup(string $chat_id, array $media): Request
     {
-//        Request::CAN_DISABLE_NOTIFICATION | Request::CAN_REPLY_TO_MESSAGE
+        return $this->request('sendMediaGroup', [
+            'chat_id' => $chat_id,
+            'media' => $media,
+        ], Request::CAN_DISABLE_NOTIFICATION | Request::CAN_REPLY_TO_MESSAGE);
     }
 
     /**
@@ -406,19 +415,25 @@ class Bot
      * Use this method to stop updating a live location message sent by the bot or via the bot (for inline bots) before live_period expires. On success, if the message was sent by the bot, the sent Message is returned, otherwise True is returned by this API method.
      * @param string $chat_id
      * @param int|null $message_id
-     * @param string|null $inline_message_id
      * @return Request
      * @throws \Exception
      */
-    public function stopMessageLiveLocation(string $chat_id, int $message_id = null, string $inline_message_id = null): Request
+    public function stopMessageLiveLocation(string $chat_id, int $message_id): Request
     {
-        if ($message_id === null && $inline_message_id === null) {
-            throw new \Exception('$message_id or $inline_message_id arguments must be not null');
-        }
-
         return $this->request('stopMessageLiveLocation', [
             'chat_id' => $chat_id,
             'message_id' => $message_id,
+        ], Request::CAN_ADD_REPLY_MARKUP);
+    }
+
+    /**
+     * Inline version of stopMessageLiveLocation method
+     * @param string $inline_message_id
+     * @return Request
+     */
+    public function stopMessageLiveLocationInline(string $inline_message_id): Request
+    {
+        return $this->request('stopMessageLiveLocation', [
             'inline_message_id' => $inline_message_id,
         ], Request::CAN_ADD_REPLY_MARKUP);
     }
@@ -792,22 +807,33 @@ class Bot
      * @param string $chat_id
      * @param string $text
      * @param int|null $message_id
-     * @param string|null $inline_message_id
      * @return Request
      * @throws \Exception
      */
-    public function editMessageText(string $chat_id, string $text, int $message_id = null, string $inline_message_id = null): Request
+    public function editMessageText(string $chat_id, int $message_id, string $text): Request
     {
-        if ($message_id === null && $inline_message_id === null) {
-            throw new \Exception('$message_id or $inline_message_id arguments must be not null');
-        }
-
         return $this
             ->request('editMessageText', [
                 'chat_id' => $chat_id,
                 'text' => $text,
                 'message_id' => $message_id,
+            ], Request::CAN_SET_PARSE_MODE | Request::CAN_REPLY_TO_MESSAGE | Request::CAN_ADD_REPLY_MARKUP)
+            ->setParseMode($this->default_parse_mode);
+    }
+
+    /**
+     * Inline version of editMessageText method
+     * @param string $inline_message_id
+     * @param string $text
+     * @return Request
+     * @throws \Exception
+     */
+    public function editMessageTextInline(string $inline_message_id, string $text): Request
+    {
+        return $this
+            ->request('editMessageText', [
                 'inline_message_id' => $inline_message_id,
+                'text' => $text,
             ], Request::CAN_SET_PARSE_MODE | Request::CAN_REPLY_TO_MESSAGE | Request::CAN_ADD_REPLY_MARKUP)
             ->setParseMode($this->default_parse_mode);
     }
@@ -817,34 +843,95 @@ class Bot
      * @param string $chat_id
      * @param string $caption
      * @param int|null $message_id
-     * @param string|null $inline_message_id
      * @return Request
      * @throws \Exception
      */
-    public function editMessageCaption(string $chat_id, string $caption, int $message_id = null, string $inline_message_id = null): Request
+    public function editMessageCaption(string $chat_id, int $message_id, string $caption): Request
     {
-        if ($message_id === null && $inline_message_id === null) {
-            throw new \Exception('$message_id or $inline_message_id arguments must be not null');
-        }
-
         return $this
             ->request('editMessageCaption', [
                 'chat_id' => $chat_id,
                 'caption' => $caption,
                 'message_id' => $message_id,
-                'inline_message_id' => $inline_message_id,
             ], Request::CAN_SET_PARSE_MODE | Request::CAN_REPLY_TO_MESSAGE | Request::CAN_ADD_REPLY_MARKUP)
             ->setParseMode($this->default_parse_mode);
     }
 
-    public function editMessageMedia()
+    /**
+     * Inline version of editMessageCaption method
+     * @param string $inline_message_id
+     * @param string $caption
+     * @return Request
+     * @throws \Exception
+     */
+    public function editMessageCaptionInline(string $inline_message_id, string $caption): Request
     {
-        //Request::CAN_ADD_REPLY_MARKUP
+        return $this
+            ->request('editMessageCaption', [
+                'inline_message_id' => $inline_message_id,
+                'caption' => $caption,
+            ], Request::CAN_SET_PARSE_MODE | Request::CAN_REPLY_TO_MESSAGE | Request::CAN_ADD_REPLY_MARKUP)
+            ->setParseMode($this->default_parse_mode);
     }
 
-    public function editMessageReplyMarkup()
+    /**
+     * Use this method to edit animation, audio, document, photo, or video messages. If a message is a part of a message album, then it can be edited only to a photo or a video. Otherwise, message type can be changed arbitrarily. When inline message is edited, new file can't be uploaded. Use previously uploaded file via its file_id or specify a URL. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned.
+     * @param string $chat_id
+     * @param int $message_id
+     * @param Types\InputMedia $media
+     * @return Request
+     */
+    public function editMessageMedia(string $chat_id, int $message_id, Types\InputMedia $media): Request
     {
-        // Request::CAN_ADD_REPLY_MARKUP
+        return $this->request('editMessageMedia', [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+            'media' => $media,
+        ], Request::CAN_ADD_INLINE_KEYBOARD_MARKUP);
+    }
+
+    /**
+     * Use this method to edit animation, audio, document, photo, or video messages. If a message is a part of a message album, then it can be edited only to a photo or a video. Otherwise, message type can be changed arbitrarily. When inline message is edited, new file can't be uploaded. Use previously uploaded file via its file_id or specify a URL. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned.
+     * @param string $inline_message_id
+     * @param Types\InputMedia $media
+     * @return Request
+     */
+    public function editMessageMediaInline(string $inline_message_id, Types\InputMedia $media): Request
+    {
+        return $this->request('editMessageMedia', [
+            'inline_message_id' => $inline_message_id,
+            'media' => $media,
+        ], Request::CAN_ADD_INLINE_KEYBOARD_MARKUP);
+    }
+
+    /**
+     * Use this method to edit only the reply markup of messages sent by the bot or via the bot (for inline bots). On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned.
+     * @param string $chat_id
+     * @param int $message_id
+     * @param Types\InlineKeyboardMarkup $reply_markup
+     * @return Request
+     */
+    public function editMessageReplyMarkup(string $chat_id, int $message_id, Types\InlineKeyboardMarkup $reply_markup): Request
+    {
+        return $this->request('editMessageReplyMarkup', [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+            'reply_markup' => $reply_markup,
+        ], Request::CAN_ADD_INLINE_KEYBOARD_MARKUP);
+    }
+
+    /**
+     * Use this method to edit only the reply markup of messages sent by the bot or via the bot (for inline bots). On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned.
+     * @param string $inline_message_id
+     * @param Types\InlineKeyboardMarkup $reply_markup
+     * @return Request
+     */
+    public function editMessageReplyMarkupInline(string $inline_message_id, Types\InlineKeyboardMarkup $reply_markup): Request
+    {
+        return $this->request('editMessageReplyMarkup', [
+            'inline_message_id' => $inline_message_id,
+            'reply_markup' => $reply_markup,
+        ], Request::CAN_ADD_INLINE_KEYBOARD_MARKUP);
     }
 
     /**
@@ -924,6 +1011,156 @@ class Bot
     }
 
     /**
+     * Use this method to add a new sticker to a set created by the bot. Returns True on success.
+     * @param int $user_id
+     * @param string $name
+     * @param string $png_sticker
+     * @param string $emojis
+     * @param Types\MaskPosition|null $mask_position
+     * @return Request
+     */
+    public function addStickerToSet(int $user_id, string $name, string $png_sticker, string $emojis, Types\MaskPosition $mask_position = null): Request
+    {
+        return $this->request('addStickerToSet', [
+            'user_id' => $user_id,
+            'name' => $name,
+            'png_sticker' => $png_sticker,
+            'emojis' => $emojis,
+            'mask_position' => $mask_position,
+        ]);
+    }
+
+    /**
+     * Use this method to move a sticker in a set created by the bot to a specific position . Returns True on success.
+     * @param string $sticker
+     * @param int $position
+     * @return Request
+     */
+    public function setStickerPositionInSet(string $sticker, int $position): Request
+    {
+        return $this->request('setStickerPositionInSet', [
+            'sticker' => $sticker,
+            'position' => $position,
+        ]);
+    }
+
+    /**
+     * Use this method to delete a sticker from a set created by the bot. Returns True on success.
+     * @param string $sticker
+     * @return Request
+     */
+    public function deleteStickerFromSet(string $sticker): Request
+    {
+        return $this->request('deleteStickerFromSet', [
+            'sticker' => $sticker,
+        ]);
+    }
+
+    /**
+     * Use this method to send answers to an inline query. On success, True is returned. No more than 50 results per query are allowed.
+     * @param string $inline_query_id
+     * @param Types\InlineQueryResult[] $results
+     * @param int|null $cache_time
+     * @param bool|null $is_personal
+     * @param string|null $next_offset
+     * @param string|null $switch_pm_text
+     * @param string|null $switch_pm_parameter
+     * @return Request
+     */
+    public function answerInlineQuery(string $inline_query_id, array $results, int $cache_time = null, bool $is_personal = null, string $next_offset = null, string $switch_pm_text = null, string $switch_pm_parameter = null): Request
+    {
+        return $this->request('answerInlineQuery', [
+            'inline_query_id' => $inline_query_id,
+            'results' => $results,
+            'cache_time' => $cache_time,
+            'is_personal' => $is_personal,
+            'next_offset' => $next_offset,
+            'switch_pm_text' => $switch_pm_text,
+            'switch_pm_parameter' => $switch_pm_parameter,
+        ]);
+    }
+
+    /**
+     * Use this method to send invoices. On success, the sent Message is returned.
+     * @param int $chat_id
+     * @param string $title
+     * @param string $description
+     * @param string $payload
+     * @param string $provider_token
+     * @param string $start_parameter
+     * @param string $currency
+     * @param array $prices
+     * @param string|null $provider_data
+     * @param string|null $photo_url
+     * @param int|null $photo_size
+     * @param int|null $photo_width
+     * @param int|null $photo_height
+     * @param bool|null $need_name
+     * @param bool|null $need_phone_number
+     * @param bool|null $need_email
+     * @param bool|null $need_shipping_address
+     * @param bool|null $send_email_to_provider
+     * @param bool|null $is_flexible
+     * @return Request
+     */
+    public function sendInvoice(int $chat_id, string $title, string $description, string $payload, string $provider_token, string $start_parameter, string $currency, array $prices, string $provider_data = null, string $photo_url = null, int $photo_size = null, int $photo_width = null, int $photo_height = null, bool $need_name = null, bool $need_phone_number = null, bool $need_email = null, bool $need_shipping_address = null, bool $send_email_to_provider = null, bool $is_flexible = null): Request
+    {
+        return $this->request('sendInvoice', [
+            'chat_id' => $chat_id,
+            'title' => $title,
+            'description' => $description,
+            'payload' => $payload,
+            'provider_token' => $provider_token,
+            'start_parameter' => $start_parameter,
+            'currency' => $currency,
+            'prices' => $prices,
+            'provider_data' => $provider_data,
+            'photo_url' => $photo_url,
+            'photo_size' => $photo_size,
+            'photo_width' => $photo_width,
+            'photo_height' => $photo_height,
+            'need_name' => $need_name,
+            'need_phone_number' => $need_phone_number,
+            'need_email' => $need_email,
+            'need_shipping_address' => $need_shipping_address,
+            'send_email_to_provider' => $send_email_to_provider,
+            'is_flexible' => $is_flexible,
+        ], Request::CAN_DISABLE_NOTIFICATION | Request::CAN_REPLY_TO_MESSAGE | Request::CAN_ADD_INLINE_KEYBOARD_MARKUP);
+    }
+
+    /**
+     * @param string $shipping_query_id
+     * @param bool $ok
+     * @param Types\ShippingOption[]|null $shipping_options
+     * @param string|null $error_message
+     * @return Request
+     */
+    public function answerShippingQuery(string $shipping_query_id, bool $ok, array $shipping_options = null, string $error_message = null): Request
+    {
+        return $this->request('answerShippingQuery', [
+            'shipping_query_id' => $shipping_query_id,
+            'ok' => $ok,
+            'shipping_options' => $shipping_options,
+            'error_message' => $error_message,
+        ]);
+    }
+
+    /**
+     * @param string $pre_checkout_query_id
+     * @param bool|null $ok
+     * @param string|null $error_message
+     * @return Request
+     */
+    public function answerPreCheckoutQuery(string $pre_checkout_query_id, bool $ok = null, string $error_message = null): Request
+    {
+        return $this->request('answerPreCheckoutQuery', [
+            'pre_checkout_query_id' => $pre_checkout_query_id,
+            'ok' => $ok,
+            'error_message' => $error_message,
+        ]);
+    }
+
+    /**
      * Use this method to send a game. On success, the sent Message is returned by this API method.
      * @param string $chat_id
      * @param string $game_short_name
@@ -935,13 +1172,79 @@ class Bot
             ->request('game_short_name', [
                 'chat_id' => $chat_id,
                 'game_short_name' => $game_short_name,
-            ])
-            ->enableNotificationModeEdit();
+            ], Request::CAN_DISABLE_NOTIFICATION);
     }
 
-    public function sendInvoice(): Request
+    /**
+     * Use this method to set the score of the specified user in a game. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True. Returns an error, if the new score is not greater than the user's current score in the chat and force is False.
+     * @param int $chat_id
+     * @param int $message_id
+     * @param int $user_id
+     * @param int $score
+     * @param bool|null $force
+     * @param bool|null $disable_edit_message
+     * @return Request
+     */
+    public function setGameScore(int $chat_id, int $message_id, int $user_id, int $score, bool $force = null, bool $disable_edit_message = null): Request
     {
-//        ->enableNotificationModeEdit()
+        return $this->request('setGameScore', [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+            'user_id' => $user_id,
+            'score' => $score,
+            'force' => $force,
+            'disable_edit_message' => $disable_edit_message,
+        ]);
+    }
+
+    /**
+     * Inline version of setGameScore method
+     * @param string $inline_message_id
+     * @param int $user_id
+     * @param int $score
+     * @param bool|null $force
+     * @param bool|null $disable_edit_message
+     * @return Request
+     */
+    public function setGameScoreInline(string $inline_message_id, int $user_id, int $score, bool $force = null, bool $disable_edit_message = null): Request
+    {
+        return $this->request('setGameScore', [
+            'inline_message_id' => $inline_message_id,
+            'user_id' => $user_id,
+            'score' => $score,
+            'force' => $force,
+            'disable_edit_message' => $disable_edit_message,
+        ]);
+    }
+
+    /**
+     * Use this method to get data for high score tables. Will return the score of the specified user and several of his neighbors in a game. On success, returns an Array of GameHighScore objects.
+     * @param int $user_id
+     * @param int $chat_id
+     * @param int $message_id
+     * @return Request
+     */
+    public function getGameHighScores(int $chat_id, int $message_id, int $user_id): Request
+    {
+        return $this->request('getGameHighScores', [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+            'user_id' => $user_id,
+        ]);
+    }
+
+    /**
+     * Inline version of getGameHighScores method
+     * @param string $inline_message_id
+     * @param string $user_id
+     * @return Request
+     */
+    public function getGameHighScoresInline(string $inline_message_id, string $user_id): Request
+    {
+        return $this->request('getGameHighScores', [
+            'inline_message_id' => $inline_message_id,
+            'user_id' => $user_id,
+        ]);
     }
 
     /**
@@ -1007,7 +1310,7 @@ class Bot
             // if array is assoc
             if ($permissions !== array_values($permissions)) {
                 foreach ($permissions as $permission_name => $permission_access) {
-                    if (!in_array($permission_name, $available_permissions)) {
+                    if (!in_array($permission_name, $available_permissions, true)) {
                         throw new \Exception("Permission \"{$permission_name}\" are not supported by this method");
                     }
                     if (!is_bool($permission_access)) {
@@ -1017,7 +1320,7 @@ class Bot
                 }
             } else {
                 foreach ($permissions as $permission_name) {
-                    if (!in_array($permission_name, $available_permissions)) {
+                    if (!in_array($permission_name, $available_permissions, true)) {
                         throw new \Exception("Permission \"{$permission_name}\" are not supported by this method");
                     }
                     $result[$permission_name] = true;

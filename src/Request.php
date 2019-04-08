@@ -14,9 +14,13 @@ class Request
 
     public const CAN_DISABLE_NOTIFICATION = 1;
     public const CAN_REPLY_TO_MESSAGE = 2;
-    public const CAN_ADD_REPLY_MARKUP = 4;
-    public const CAN_DISABLE_WEB_PAGE_PREVIEW = 8;
-    public const CAN_SET_PARSE_MODE = 16;
+    public const CAN_DISABLE_WEB_PAGE_PREVIEW = 4;
+    public const CAN_SET_PARSE_MODE = 8;
+    public const CAN_ADD_INLINE_KEYBOARD_MARKUP = 16;
+    public const CAN_ADD_REPLY_KEYBOARD_MARKUP = 32;
+    public const CAN_ADD_REPLY_KEYBOARD_REMOVE = 64;
+    public const CAN_ADD_FORCE_REPLY = 128;
+    public const CAN_ADD_REPLY_MARKUP = self::CAN_ADD_INLINE_KEYBOARD_MARKUP | self::CAN_ADD_REPLY_KEYBOARD_MARKUP | self::CAN_ADD_REPLY_KEYBOARD_REMOVE | self::CAN_ADD_FORCE_REPLY;
 
     /**
      * @var string $token Token of the Telegram-bot
@@ -51,11 +55,15 @@ class Request
         $this->params = $params;
         $permissions_bits = array_reverse(str_split(decbin($permissions)));
         $this->permissions = [
-            self::CAN_DISABLE_NOTIFICATION => !empty($permissions_bits[0]),
-            self::CAN_REPLY_TO_MESSAGE => !empty($permissions_bits[1]),
-            self::CAN_ADD_REPLY_MARKUP => !empty($permissions_bits[2]),
+            self::CAN_DISABLE_NOTIFICATION => !empty($permissions_bits[1]),
+            self::CAN_REPLY_TO_MESSAGE => !empty($permissions_bits[2]),
             self::CAN_DISABLE_WEB_PAGE_PREVIEW => !empty($permissions_bits[3]),
             self::CAN_SET_PARSE_MODE => !empty($permissions_bits[4]),
+            self::CAN_ADD_INLINE_KEYBOARD_MARKUP => !empty($permissions_bits[5]),
+            self::CAN_ADD_REPLY_KEYBOARD_MARKUP => !empty($permissions_bits[6]),
+            self::CAN_ADD_REPLY_KEYBOARD_REMOVE => !empty($permissions_bits[7]),
+            self::CAN_ADD_FORCE_REPLY => !empty($permissions_bits[8]),
+            self::CAN_ADD_REPLY_MARKUP => !empty($permissions_bits[5]) && !empty($permissions_bits[6]) && !empty($permissions_bits[7]) && !empty($permissions_bits[8]),
         ];
     }
 
@@ -71,12 +79,20 @@ class Request
                 return 'CAN_DISABLE_NOTIFICATION';
             case self::CAN_REPLY_TO_MESSAGE:
                 return 'CAN_REPLY_TO_MESSAGE';
-            case self::CAN_ADD_REPLY_MARKUP:
-                return 'CAN_ADD_REPLY_MARKUP';
             case self::CAN_DISABLE_WEB_PAGE_PREVIEW:
                 return 'CAN_DISABLE_WEB_PAGE_PREVIEW';
             case self::CAN_SET_PARSE_MODE:
                 return 'CAN_SET_PARSE_MODE';
+            case self::CAN_ADD_INLINE_KEYBOARD_MARKUP:
+                return 'CAN_ADD_INLINE_KEYBOARD_MARKUP';
+            case self::CAN_ADD_REPLY_KEYBOARD_MARKUP:
+                return 'CAN_ADD_REPLY_KEYBOARD_MARKUP';
+            case self::CAN_ADD_REPLY_KEYBOARD_REMOVE:
+                return 'CAN_ADD_REPLY_KEYBOARD_REMOVE';
+            case self::CAN_ADD_FORCE_REPLY:
+                return 'CAN_ADD_FORCE_REPLY';
+            case self::CAN_ADD_REPLY_MARKUP:
+                return 'CAN_ADD_REPLY_MARKUP';
         }
         return 'UNKNOWN_PERMISSION';
     }
@@ -103,7 +119,7 @@ class Request
      */
     public function setParseMode(string $parse_mode): self
     {
-        if ($parse_mode !== Bot::PARSE_MODE_HTML && $parse_mode !== Bot::PARSE_MODE_MARKDOWN) {
+        if (!Bot::checkParseMode($parse_mode)) {
             throw new \Exception("Unknown parse mode: {$parse_mode}");
         }
         $this->checkPermission(self::CAN_SET_PARSE_MODE, __METHOD__);

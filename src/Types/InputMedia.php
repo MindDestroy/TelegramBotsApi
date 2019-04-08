@@ -31,6 +31,46 @@ class InputMedia
 
     /**
      * @param array $data
+     * @return string
+     * @throws \Exception
+     */
+    public static function getType(array $data): string
+    {
+        switch ($data['type'] ?? '') {
+            case self::TYPE_ANIMATION:
+                return self::TYPE_ANIMATION;
+            case self::TYPE_DOCUMENT:
+                return self::TYPE_DOCUMENT;
+            case self::TYPE_AUDIO:
+                return self::TYPE_PHOTO;
+            case self::TYPE_PHOTO:
+                return self::TYPE_PHOTO;
+            case self::TYPE_VIDEO:
+                return self::TYPE_VIDEO;
+            default:
+                throw new \Exception("Unknown type: {$data['type']}");
+        }
+    }
+
+    /**
+     * @param array $data
+     * @return bool
+     */
+    public static function checkType(array $data): bool
+    {
+        switch ($data['type'] ?? '') {
+            case self::TYPE_ANIMATION:
+            case self::TYPE_DOCUMENT:
+            case self::TYPE_AUDIO:
+            case self::TYPE_PHOTO:
+            case self::TYPE_VIDEO:
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param array $data
      * @return object
      * @throws \Exception
      */
