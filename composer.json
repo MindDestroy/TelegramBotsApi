@@ -1,7 +1,6 @@
 {
   "name": "kuvardin/telegram-bots-api",
   "description": "Simply PHP classes for make Telegram-bots",
-  "type": "library",
   "license": "GPL-3.0-only",
   "version": "1.0.0",
   "authors": [
