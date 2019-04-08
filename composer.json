@@ -1,19 +1,16 @@
 {
   "name": "kuvardin/telegram-bots-api",
   "description": "Simply PHP classes for make Telegram-bots",
-  "license": "GPL-3.0-only",
-  "type": "library",
-  "minimum-stability": "dev",
   "version": "1.0.0",
+  "require": {
+    "php": ">=7.0"
+  },
   "authors": [
     {
       "name": "Maxim Kuvardin",
       "email": "kuvard.in@mail.ru"
     }
   ],
-  "require": {
-    "php": ">=7.0"
-  },
   "autoload": {
     "classmap": [
       "src"
