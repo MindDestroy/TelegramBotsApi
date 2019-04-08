@@ -2,6 +2,7 @@
   "name": "kuvardin/telegram-bots-api",
   "description": "Simply PHP classes for make Telegram-bots",
   "version": "1.0.0",
+  "minimum-stability": "stable",
   "require": {
     "php": ">=7.0.0"
   },
